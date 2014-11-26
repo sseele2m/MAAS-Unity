@@ -83,24 +83,6 @@ public class Controller : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		server.Update();
-//		if(!clientConnected)
-//		{
-//			clientConnected = server.AcceptConnection();
-//		}
-//		else
-//		{
-//			// Read the next message that the server received.
-//			string str = server.ReadMessage();
-//			if(str == "") // If no message has arrived, check whether the client is still connected. -> TODO: Maybe don't do this as often.
-//			{
-//				clientConnected = server.ClientConnected();
-//			}
-//			else
-//			{
-//				EnqueueMessage(str, GuiMessageType.GMT_CLIENT);
-//				ProcessMessage(str);
-//			}
-//		}
 
 		// Process the client messages.
 		if(server.Inbox.Count > 0)
@@ -109,12 +91,6 @@ public class Controller : MonoBehaviour {
 			EnqueueMessage(msg, GuiMessageType.GMT_CLIENT);
 			ProcessMessage(msg);
 		}
-
-		// Send all server messages from its outbox.
-//		if(server.Outbox.Count > 0)
-//		{
-//			server.SendMessage();
-//		}
 
 		// Read all server messages from its inbox.
 		while(server.ServerMessageQueue.Count > 0)
