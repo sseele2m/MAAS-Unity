@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class youBotNavAgent : MonoBehaviour {
+public class RobotNavAgent : MonoBehaviour {
 	public Transform target;
 	Transform currentTarget;
 
@@ -40,6 +40,10 @@ public class youBotNavAgent : MonoBehaviour {
 					string.Format("{0} arrived at {1}", name, currentTarget.transform.parent.name),
 					Controller.GuiMessageType.GMT_ACTOR
 					);
+
+				// Attach the shelf to the robot.
+				currentTarget.parent.GetComponentInChildren<Shelf>().transform.parent = transform;
+
 				notifiedController = true;
 			}
 		}

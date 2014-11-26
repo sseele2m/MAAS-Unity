@@ -12,7 +12,7 @@ public class CommunicationServer {
 		CONNECTED
 	}
 
-	enum ClientType
+	public enum ClientType
 	{
 		KIVA,
 		ROCKIN
@@ -42,7 +42,11 @@ public class CommunicationServer {
 	readonly float MSG_RESPONSETIMEOUT = 1f;
 	float waitTime;
 
-	ClientType clientType;
+	public ClientType clientType
+	{
+		get;
+		protected set;
+	}
 
 	public CommunicationServer(int portNumber)
 	{

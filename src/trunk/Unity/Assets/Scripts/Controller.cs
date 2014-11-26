@@ -89,7 +89,18 @@ public class Controller : MonoBehaviour {
 		{
 			string msg = server.Inbox.Dequeue();
 			EnqueueMessage(msg, GuiMessageType.GMT_CLIENT);
-			ProcessMessage(msg);
+			if(server.clientType == CommunicationServer.ClientType.ROCKIN)
+			{
+				ProcessRockinMessage(msg);
+			}
+			else if(server.clientType == CommunicationServer.ClientType.KIVA)
+			{
+				ProcessKivaMessage(msg);
+			}
+			else
+			{
+				EnqueueMessage("Unsupported client type.", GuiMessageType.GMT_CONTROLLER);
+			}
 		}
 
 		// Read all server messages from its inbox.
@@ -204,7 +215,7 @@ public class Controller : MonoBehaviour {
 		}
 	}
 
-	void ProcessMessage(string str)
+	void ProcessRockinMessage(string str)
 	{
 		string[] split = str.Split(new char[]{' '});
 		
@@ -241,7 +252,7 @@ public class Controller : MonoBehaviour {
 			if(actors.ContainsKey(split[3]))
 			{
 				target = actors[split[3]];
-				MovesTo(youBot: actor, station: target);
+				MovesTo(robot: actor, target: target);
 			}
 			else
 			{
@@ -271,7 +282,7 @@ public class Controller : MonoBehaviour {
 		case "arrived":
 		case "arrives":
 			if(!actors.ContainsKey(actor.name))
-				Arrives(order: actor);
+				RockinArrives(order: actor);
 			else
 			{
 				EnqueueMessage( 
@@ -305,10 +316,94 @@ public class Controller : MonoBehaviour {
 		}
 	}
 
-#region Actions
-	void MovesTo(Transform youBot, Transform station)
+	void ProcessKivaMessage(string str)
 	{
-		youBot.GetComponent<youBotNavAgent>().target = station.FindChild("Target");
+		string[] split = str.Split(new char[]{' '});
+		
+		Transform actor = null;
+		Transform target = null;
+		
+		// Determine the actor.
+		if(actors.ContainsKey(split[0]))
+		{
+			actor = actors[split[0]];
+		}
+		else
+		{
+			// It might be a new actor.
+			// So far only orders can appear.
+			if(split[0].StartsWith("Order"))
+			{
+				GameObject newOrder = Instantiate(Resources.Load<GameObject>("Order")) as GameObject;
+				newOrder.name = split[0];
+				actor = newOrder.transform;
+			}
+			else
+			{
+				EnqueueMessage( 
+				               string.Format("Cannot perform action, '{0}' could not be found", split[0]),
+				               GuiMessageType.GMT_CONTROLLER);
+				return;
+			}
+		}
+
+		switch(split[1])
+		{
+		case "moves":
+			if(actors.ContainsKey(split[3]))
+			{
+				target = actors[split[3]];
+				MovesTo(robot: actor, target: target);
+			}
+			else
+			{
+				EnqueueMessage( 
+				               string.Format("Cannot move to '{0}', there is no such target", split[3]),
+				               GuiMessageType.GMT_CONTROLLER);
+			}
+			break;
+		case "arrived":
+		case "arrives":
+			// TODO: error handling, in case orderpicker is not present
+			if(!actors.ContainsKey(actor.name))
+				KivaArrives(order: actor, orderPicker : actors[split[3]]);
+			else
+			{
+				EnqueueMessage( 
+				               string.Format("{0} cannot arrive, it is already there.", actor.name),
+				               GuiMessageType.GMT_CONTROLLER);
+			}
+			break;
+//		case "is":if(actors.ContainsKey(split[3]))
+//			{
+//				target = actors[split[3]];
+//				if(split[2] == "on")
+//					IsOn(order: actor, youBot: target);
+//				else if (split[2] == "at")
+//					IsAt(order: actor, station: target);
+//			}
+//			else
+//			{
+//				EnqueueMessage( 
+//				               string.Format("Cannot place {0} at/on '{1}', there is no such target", actor, split[3]),
+//				               GuiMessageType.GMT_CONTROLLER);
+//			}
+//			
+//			break;
+//		case "shipped":
+//		case "ships":
+//			Ships(order: actor);
+//			break;
+		default:
+			EnqueueMessage("No action to be performed", GuiMessageType.GMT_CONTROLLER);
+			break;
+		}
+	}
+
+#region Actions
+	void MovesTo(Transform robot, Transform target)
+	{
+		robot.GetComponent<RobotNavAgent>().target = target.FindChild("Target");
 	}
 
 	void WorksOn(Transform station, Transform order)
@@ -331,11 +426,41 @@ public class Controller : MonoBehaviour {
 		}
 	}
 
-	void Arrives(Transform order)
+	void RockinArrives(Transform order)
 	{
 		actors.Add(order.name, order); // Add the actor to the dictionary.
 		actors["IncomingStation"].GetComponent<IncomingStationAgent>().AddOrder(order);
 		order.parent = actors["IncomingStation"];
+	}
+
+	void KivaArrives(Transform order, Transform orderPicker)
+	{
+		actors.Add(order.name, order); // Add the actor to the dictionary.
+
+		// Find a free spot on the order picker desk.
+		Transform freeSpot = null;
+		TargetVisualizer[] mounts = orderPicker.FindChild("BoxMounts").GetComponentsInChildren<TargetVisualizer>();
+		foreach(TargetVisualizer mount in mounts)
+		{
+			if(mount.transform.childCount == 0)
+			{
+				freeSpot = mount.transform;
+				break;
+			}
+		}
+
+		if(freeSpot != null)
+		{
+			order.parent = freeSpot;
+		}
+		else
+		{
+			EnqueueMessage( 
+               string.Format("Cannot place '{0}' on {1}'s desk, there are no free spots.", order.name, orderPicker.name),
+               GuiMessageType.GMT_CONTROLLER);
+
+			Destroy(order.gameObject);
+		}
 	}
 
 	void IsOn(Transform order, Transform youBot)
