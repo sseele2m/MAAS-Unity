@@ -215,7 +215,7 @@ public class Controller : MonoBehaviour {
 
 		GUILayout.BeginArea(new Rect(200,0,Screen.width - 200, Screen.height));
 		GUILayout.BeginHorizontal();
-		GUILayout.FlexibleSpace();
+		//GUILayout.FlexibleSpace();
 		switch(guiState)
 		{
 		case GuiInputState.GIS_INITIAL:
@@ -609,8 +609,8 @@ public class Controller : MonoBehaviour {
 	void RockinArrives(Transform order)
 	{
 		actors.Add(order.name, order); // Add the actor to the dictionary.
-		actors["IncomingStation"].GetComponent<IncomingStationAgent>().AddOrder(order);
-		order.parent = actors["IncomingStation"];
+		actors["IncomingStation1"].GetComponent<IncomingStationAgent>().AddOrder(order);
+		order.parent = actors["IncomingStation1"];
 	}
 
 	void KivaArrives(Transform order, Transform orderPicker)
@@ -683,7 +683,7 @@ public class Controller : MonoBehaviour {
 
 	void Ships(Transform order)
 	{
-		if(actors["OutgoingStation"].GetComponent<OutgoingStationAgent>().RemoveOrder(order))
+		if(actors["OutgoingStation1"].GetComponent<OutgoingStationAgent>().RemoveOrder(order))
 		{
 			actors.Remove(order.name);
 			Destroy(order.gameObject);

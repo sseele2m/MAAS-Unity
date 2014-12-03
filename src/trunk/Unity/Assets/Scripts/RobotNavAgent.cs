@@ -93,6 +93,12 @@ public class RobotNavAgent : MonoBehaviour {
 					isEmpty = true;
 					navMeshAgent.radius = robotRadius;
 				}
+				else if(currentTarget.parent.GetComponent<OrderPicker>() != null)
+				{
+					GetComponentInChildren<Shelf>().transform.parent = currentTarget.parent;
+					isEmpty = true;
+					navMeshAgent.radius = robotRadius;
+				}
 			}
 
 			currentState = State.IDLE;
