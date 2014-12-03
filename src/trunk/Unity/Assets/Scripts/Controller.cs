@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 public class GuiMessage
 {
@@ -54,6 +56,27 @@ public class Controller : MonoBehaviour {
 		GMT_CONTROLLER,
 		GMT_ACTOR
 	}
+
+	enum GuiInputState
+	{
+		GIS_INITIAL,
+		GIS_CHOOSE_ACTOR,
+		GIS_CHOOSE_ACTION,
+		GIS_CHOOSE_TARGET,
+		GIS_READY
+	}
+	bool showGUIInput = false;
+	GuiInputState guiState = GuiInputState.GIS_INITIAL;
+	string[] inputMessage = new string[3];
+	readonly string[] availableActions = new string[]{
+		"moves to",
+		"is on",
+		"is at",
+		"starts working on",
+		"stops working",
+		"arrives",
+		"ships"
+	};
 
 	// Use this for initialization
 	void Start () {
@@ -110,7 +133,7 @@ public class Controller : MonoBehaviour {
 		}
 
 		// Process user input.
-		if(Input.GetKeyDown(KeyCode.C))
+		if(Input.GetKey(KeyCode.C) && Input.GetKeyDown(KeyCode.RightArrow))
 		{
 			// Disable the current cam controller.
 			cameraControllers[currentCamController].enabled = false;
@@ -122,6 +145,25 @@ public class Controller : MonoBehaviour {
 
 			// Activate the new cam controller.
 			cameraControllers[currentCamController].enabled = true;
+		}
+		else if(Input.GetKey(KeyCode.C) && Input.GetKeyDown(KeyCode.LeftArrow))
+		{
+			// Disable the current cam controller.
+			cameraControllers[currentCamController].enabled = false;
+			
+			// Increment the index.
+			--currentCamController;
+			if(currentCamController < 0)
+				currentCamController = cameraControllers.Count - 1;
+			
+			// Activate the new cam controller.
+			cameraControllers[currentCamController].enabled = true;
+		}
+
+		// Toggle the GUI input.
+		if(Input.GetKeyDown(KeyCode.F1))
+		{
+			showGUIInput = !showGUIInput;
 		}
 	}
 
@@ -160,11 +202,132 @@ public class Controller : MonoBehaviour {
 
 	void OnGUI()
 	{
-		if(guiMessageQueue.Count < 1)
+		// GUI input to simulate messages.
+		InputGUI();
+		// Display GUI messages.
+		MessageGUI();
+	}
+
+	void InputGUI()
+	{
+		if(!showGUIInput)
 			return;
 
-		GUI.Box(new Rect(5, Screen.height - 10 - guiMessageQueue.Count * 20, guiWidth + 10, guiMessageQueue.Count * 20), "");
+		GUILayout.BeginArea(new Rect(200,0,Screen.width - 200, Screen.height));
+		GUILayout.BeginHorizontal();
+		GUILayout.FlexibleSpace();
+		switch(guiState)
+		{
+		case GuiInputState.GIS_INITIAL:
+			if(GUILayout.Button("Create Message"))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTOR;
+			}
+			break;
+		case GuiInputState.GIS_CHOOSE_ACTOR:
+			GUILayout.BeginVertical();
+			string filter = @"youBot*|Robot*|Order*|Station*";
+			foreach(string actor in actors.Keys.ToArray().Where(x => Regex.IsMatch(x, filter, RegexOptions.IgnoreCase) == true).ToList())
+			{
+				if(GUILayout.Button(actor))
+				{
+					inputMessage[0] = actor;
+					guiState = GuiInputState.GIS_CHOOSE_ACTION;
+					break;
+				}
+			}
+			GUILayout.EndVertical();
+			break;
+		case GuiInputState.GIS_CHOOSE_ACTION:
+			GUILayout.BeginHorizontal();
+			if(GUILayout.Button(inputMessage[0]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTOR;
+				break;
+			}
+			GUILayout.BeginVertical();
+			foreach(string action in availableActions)
+			{
+				if(GUILayout.Button(action))
+				{
+					inputMessage[1] = action;
+					guiState = GuiInputState.GIS_CHOOSE_TARGET;
+					break;
+				}
+			}
+			GUILayout.EndVertical();
+			GUILayout.EndHorizontal();
+			break;
+		case GuiInputState.GIS_CHOOSE_TARGET:
+			if(GUILayout.Button(inputMessage[0]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTOR;
+				break;
+			}
+			if(GUILayout.Button(inputMessage[1]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTION;
+				break;
+			}
+			GUILayout.BeginVertical();
+			if(GUILayout.Button("-"))
+			{
+				inputMessage[2] = "";
+				guiState = GuiInputState.GIS_READY;
+				break;
+			}
+			string filter2 = @"Station*|youBot*|Order*|Slot*";
+			foreach(string target in actors.Keys.ToArray().Where(x => Regex.IsMatch(x, filter2, RegexOptions.IgnoreCase) == true).ToList())
+			{
+				if(GUILayout.Button(target))
+				{
+					inputMessage[2] = target;
+					guiState = GuiInputState.GIS_READY;
+					break;
+				}
+			}
+			GUILayout.EndVertical();
+			break;
+		case GuiInputState.GIS_READY:
+			if(GUILayout.Button(inputMessage[0]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTOR;
+				break;
+			}
+			if(GUILayout.Button(inputMessage[1]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_ACTION;
+				break;
+			}
+			if(GUILayout.Button(inputMessage[2]))
+			{
+				guiState = GuiInputState.GIS_CHOOSE_TARGET;
+				break;
+			}
+			if(GUILayout.Button("Send to Rockin"))
+			{
+				ProcessRockinMessage(string.Format("{0} {1} {2}", inputMessage[0], inputMessage[1], inputMessage[2]));
+				EnqueueMessage(string.Format("{0} {1} {2}", inputMessage[0], inputMessage[1], inputMessage[2]), GuiMessageType.GMT_CONTROLLER);
+			}
+			if(GUILayout.Button("Send to Kiva"))
+			{
+				ProcessKivaMessage(string.Format("{0} {1} {2}", inputMessage[0], inputMessage[1], inputMessage[2]));
+				EnqueueMessage(string.Format("{0} {1} {2}", inputMessage[0], inputMessage[1], inputMessage[2]), GuiMessageType.GMT_CONTROLLER);
+			}
+			break;
+		}
+		GUILayout.FlexibleSpace();
+		GUILayout.EndHorizontal();
+		GUILayout.EndArea();
+	}
 
+	void MessageGUI()
+	{
+		if(guiMessageQueue.Count < 1)
+			return;
+		
+		GUI.Box(new Rect(5, Screen.height - 10 - guiMessageQueue.Count * 20, guiWidth + 10, guiMessageQueue.Count * 20), "");
+		
 		int numOfDequeues = 0;
 		// Diplay messages in queue
 		int index = 0;
@@ -173,7 +336,7 @@ public class Controller : MonoBehaviour {
 		foreach(GuiMessage gm in guiMessageQueue)
 		{
 			GUI.color = gm.displayColor;
-
+			
 			// Determine the label's width.
 			if(gm.length == 0f)
 			{
@@ -184,30 +347,30 @@ public class Controller : MonoBehaviour {
 					guiWidth = gm.length;
 				}
 			}
-
+			
 			GUI.Label(new Rect(10,Screen.height - 10 - (guiMessageQueue.Count - index) * 20, guiWidth, 20), gm.message);
-
+			
 			// Determine whether this message has expired.
 			if(Time.time - gm.creationTime > displayTime)
 			{
 				++numOfDequeues;
 			}
-
+			
 			// Determine what the maximum required width is.
 			if(gm.length > maxWidth)
 			{
 				maxWidth = gm.length;
 			}
-
+			
 			++index;
 		}
-
+		
 		// Remove all messages that have expired.
 		for(int i = 0; i < numOfDequeues; ++i)
 		{
 			guiMessageQueue.Dequeue();
 		}
-
+		
 		// Adjust the width of the rectangles.
 		if(maxWidth < guiWidth)
 		{
@@ -252,7 +415,7 @@ public class Controller : MonoBehaviour {
 			if(actors.ContainsKey(split[3]))
 			{
 				target = actors[split[3]];
-				MovesTo(robot: actor, target: target);
+				MovesTo(youBot: actor.GetComponent<youBotNavAgent>(), target: target);
 			}
 			else
 			{
@@ -353,7 +516,7 @@ public class Controller : MonoBehaviour {
 			if(actors.ContainsKey(split[3]))
 			{
 				target = actors[split[3]];
-				MovesTo(robot: actor, target: target);
+				MovesTo(robot: actor.GetComponent<RobotNavAgent>(), target: target);
 			}
 			else
 			{
@@ -401,9 +564,26 @@ public class Controller : MonoBehaviour {
 	}
 
 #region Actions
-	void MovesTo(Transform robot, Transform target)
+	void MovesTo(youBotNavAgent youBot, Transform target)
 	{
-		robot.GetComponent<RobotNavAgent>().target = target.FindChild("Target");
+		if(youBot == null)
+		{
+			EnqueueMessage("No youBot component found. Are you running the wrong setup?", GuiMessageType.GMT_CONTROLLER);
+			return;
+		}
+
+		youBot.target = target.FindChild("Target");
+	}
+
+	void MovesTo(RobotNavAgent robot, Transform target)
+	{
+		if(robot == null)
+		{
+			EnqueueMessage("No youBot component found. Are you running the wrong setup?", GuiMessageType.GMT_CONTROLLER);
+			return;
+		}
+
+		robot.target = target.FindChild("Target");
 	}
 
 	void WorksOn(Transform station, Transform order)

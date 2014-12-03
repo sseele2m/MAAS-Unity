@@ -41,6 +41,7 @@ public class youBotNavAgent : MonoBehaviour {
 					Controller.GuiMessageType.GMT_ACTOR
 					);
 				notifiedController = true;
+				target = currentTarget = null;
 			}
 		}
 	}
