@@ -464,14 +464,14 @@ public class Controller : MonoBehaviour {
 			else
 			{
 				EnqueueMessage( 
-	               string.Format("Cannot place {0} at/on '{1}', there is no such target", actor, split[3]),
+	               string.Format("Cannot place {0} at/on '{1}', there is no such target", actor.name, split[3]),
 	               GuiMessageType.GMT_CONTROLLER);
 			}
 			
 			break;
 		case "shipped":
 		case "ships":
-			Ships(order: actor);
+			RockinShips(order: actor);
 			break;
 		default:
 			EnqueueMessage("No action to be performed", GuiMessageType.GMT_CONTROLLER);
@@ -527,9 +527,19 @@ public class Controller : MonoBehaviour {
 			break;
 		case "arrived":
 		case "arrives":
-			// TODO: error handling, in case orderpicker is not present
 			if(!actors.ContainsKey(actor.name))
-				KivaArrives(order: actor, orderPicker : actors[split[3]]);
+			{
+				if(actors.ContainsKey(split[3]))
+			   	{
+					KivaArrives(order: actor, orderPicker : actors[split[3]]);
+				}
+				else
+				{
+					EnqueueMessage( 
+			               string.Format("{0} cannot arrive at {1}, there is no such order picker.", actor.name, split[3]),
+			               GuiMessageType.GMT_CONTROLLER);
+				}
+			}
 			else
 			{
 				EnqueueMessage( 
@@ -553,10 +563,10 @@ public class Controller : MonoBehaviour {
 //			}
 //			
 //			break;
-//		case "shipped":
-//		case "ships":
-//			Ships(order: actor);
-//			break;
+		case "shipped":
+		case "ships":
+			KivaShips(order: actor);
+			break;
 		default:
 			EnqueueMessage("No action to be performed", GuiMessageType.GMT_CONTROLLER);
 			break;
@@ -631,6 +641,8 @@ public class Controller : MonoBehaviour {
 
 		if(freeSpot != null)
 		{
+			order.transform.position = freeSpot.position;
+			order.transform.rotation = freeSpot.rotation;
 			order.parent = freeSpot;
 		}
 		else
@@ -681,7 +693,7 @@ public class Controller : MonoBehaviour {
 		}
 	}
 
-	void Ships(Transform order)
+	void RockinShips(Transform order)
 	{
 		if(actors["OutgoingStation1"].GetComponent<OutgoingStationAgent>().RemoveOrder(order))
 		{
@@ -694,6 +706,19 @@ public class Controller : MonoBehaviour {
                string.Format("{0} cannot be shipped, it is not at the outgoing station.", order.name),
                GuiMessageType.GMT_CONTROLLER);
 		}
+	}
+
+	void KivaShips(Transform order)
+	{
+		if(!actors.ContainsKey(order.name))
+		{
+			EnqueueMessage( 
+               string.Format("{0} cannot be shipped, there is no such order.", order.name),
+               GuiMessageType.GMT_CONTROLLER);
+		}
+
+		actors.Remove(order.name);
+		Destroy(order.gameObject);
 	}
 #endregion
 }

@@ -103,30 +103,49 @@ public class CommunicationServer {
 		{
 			int i;
 			byte[] bytes = new byte[1024];
-			string str;
+			string incoming;
 			
 			i = stream.Read(bytes, 0, bytes.Length);
 			
-			str = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-			str = str.Replace("\r\n", "").Replace("\r","").Replace("\n","");
-			
-			if(str.ToLower() == "rockin")
+			incoming = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
+			string[] splitMsgs = incoming.Split(new char[]{'\n'});
+
+			if(splitMsgs.Length > 0)
 			{
-				clientType = ClientType.ROCKIN;
-				ServerMessageQueue.Enqueue("Connected client is for Rockin setup.");
-			}
-			else if(str.ToLower() == "kiva")
-			{
-				clientType = ClientType.KIVA;
-				ServerMessageQueue.Enqueue("Connected client is for Kiva setup.");
+				splitMsgs[0] = splitMsgs[0].Replace("\r\n", "").Replace("\r","").Replace("\n","");
+				if(splitMsgs[0].ToLower() == "rockin")
+				{
+					clientType = ClientType.ROCKIN;
+					ServerMessageQueue.Enqueue("Connected client is for Rockin setup.");
+				}
+				else if(splitMsgs[0].ToLower() == "kiva")
+				{
+					clientType = ClientType.KIVA;
+					ServerMessageQueue.Enqueue("Connected client is for Kiva setup.");
+				}
 			}
 			else
 			{
-				ServerMessageQueue.Enqueue(string.Format("Unrecognized client type: {0}. Disconnecting.", str));
+				ServerMessageQueue.Enqueue(string.Format("Unrecognized client type: {0}. Disconnecting.", incoming));
 				CleanUpClient();
 				return;
 			}
 
+			// If we received more than just the client type, put all of it into the inbox.
+			if(splitMsgs.Length > 1)
+			{
+				Debug.Log("received more than type");
+				string msg;
+				for(int index = 1; index < splitMsgs.Length; ++index)
+				{
+					msg = splitMsgs[index].Replace("\r\n", "").Replace("\r","").Replace("\n","");
+					if(msg.Length > 0)
+					{
+						Inbox.Enqueue(msg);
+					}
+				}
+			}
+			
 			connectionState = ConnectionState.CONNECTED;
 			waitTime = Time.time;
 		}
@@ -153,14 +172,19 @@ public class CommunicationServer {
 
 		int i;
 		byte[] bytes = new byte[1024];
-		string msg;
+		string incoming;
 
 		i = stream.Read(bytes, 0, bytes.Length);
 
-		msg = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-		msg = msg.Replace("\r\n", "").Replace("\r","").Replace("\n","");
-
-		Inbox.Enqueue(msg);
+		incoming = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
+		string[] splitMsgs = incoming.Split(new char[]{'\n'});
+		string msg;
+		foreach (string str in splitMsgs)
+		{
+			msg = str.Replace("\r\n", "").Replace("\r","").Replace("\n","");
+			if(msg.Length > 0)
+				Inbox.Enqueue(msg);
+		}
 	}
 
 	public void SendMessage()

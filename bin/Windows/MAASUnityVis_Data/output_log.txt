@@ -1,0 +1,24 @@
+Initialize engine version: 4.6.1f1 (d1db7a1b5196)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 10.0]
+    Renderer: NVIDIA GeForce 9600M GT (ID=0x649)
+    Vendor:   NVIDIA
+    VRAM:     497 MB
+Begin MonoManager ReloadAssembly
+Platform assembly: C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+- Completed reload, in  0.798 seconds
+desktop: 1680x1050 60Hz; virtual: 1680x1050 at 0,0
+<RI> Initializing input.
+<RI> Input initialized.
+Platform assembly: C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: C:\Users\Sven\Dropbox\Projects\MAAS-Visualization\bin\Windows\MAASUnityVis_Data\Managed\System.dll (this message is harmless)
+received more than type
+ 
+(Filename: C:/BuildAgent/work/d63dfc6385190b60/artifacts/StandalonePlayerGenerated/UnityEngineDebug.cpp Line: 49)
+
